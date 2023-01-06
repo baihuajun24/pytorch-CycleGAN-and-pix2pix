@@ -81,6 +81,9 @@ class BaseModel(ABC):
         Parameters:
             opt (Option class) -- stores all the experiment flags; needs to be a subclass of BaseOptions
         """
+        # print("**********************************************************************")
+        # print(f"continue_train? {opt.continue_train}")
+        # print("**********************************************************************")
         if self.isTrain:
             self.schedulers = [networks.get_scheduler(optimizer, opt) for optimizer in self.optimizers]
         if not self.isTrain or opt.continue_train:
@@ -190,6 +193,9 @@ class BaseModel(ABC):
                 # if you are using PyTorch newer than 0.4 (e.g., built from
                 # GitHub source), you can remove str() on self.device
                 state_dict = torch.load(load_path, map_location=str(self.device))
+                print("**********************************************************************")
+                print(f"loaded {load_path}")
+                print("**********************************************************************")
                 if hasattr(state_dict, '_metadata'):
                     del state_dict._metadata
 
