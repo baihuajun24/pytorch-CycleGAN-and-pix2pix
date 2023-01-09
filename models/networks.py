@@ -157,6 +157,18 @@ def define_G(input_nc, output_nc, ngf, netG, norm='batch', use_dropout=False, in
         net = UnetGenerator(input_nc, output_nc, 8, ngf, norm_layer=norm_layer, use_dropout=use_dropout)
     else:
         raise NotImplementedError('Generator model name [%s] is not recognized' % netG)
+    #print("0109 check netG value:")
+    #print(netG)
+    #params = net.state_dict()
+    #print("0109 check all keys:")
+    #print(params.keys())
+    for name, param in net.named_parameters():
+        if param.requires_grad and netG == 'resnet_9blocks' and 'model.18.conv_block' not in name:
+            param.requires_grad = False
+    #print("0109 check all keys require_grad after freezing:")
+    #for name, param in net.named_parameters():
+    #    if param.requires_grad:
+    #        print(name)
     return init_net(net, init_type, init_gain, gpu_ids)
 
 
