@@ -1,4 +1,5 @@
 import torch
+import torchmetrics
 import itertools
 from util.image_pool import ImagePool
 from .base_model import BaseModel
@@ -137,11 +138,46 @@ class CycleGANModel(BaseModel):
         loss_D = (loss_D_real + loss_D_fake) * 0.5
         loss_D.backward()
         return loss_D
+    
+    def backward_D_mse(self, netD, real, fake):
+        """Calculate Mean Squared Error loss for the discriminator"""
+        # Calculate loss
+        mse = torch.nn.MSELoss()
+        loss_D = mse(real, fake.detach())
+        # Calculate gradients
+        # loss_D.backward()
+        return loss_D
+    
+    def backward_D_rmse(self, netD, real, fake):
+        """Calculate Root Mean Squared Error loss for the discriminator"""
+        # Calculate loss
+        mse = torch.nn.MSELoss()
+        mse_loss = mse(real, fake.detach())
+        loss_D = torch.sqrt(mse_loss)
+        # Calculate gradients
+        # loss_D.backward()
+        return loss_D
+    
+    def backward_D_ms_ssim(self, netD, real, fake):
+        """Calculate Multi-scale Structural Similarity Index loss for the discriminator"""
+        # Calculate loss
+        ms_ssim = torchmetrics.MultiScaleStructuralSimilarityIndexMeasure().to("cuda")
+        loss_D = ms_ssim(real, fake.detach())
+        # Calculate gradients
+        # loss_D.backward()
+        return -loss_D
 
     def backward_D_A(self):
         """Calculate GAN loss for discriminator D_A"""
         fake_B = self.fake_B_pool.query(self.fake_B)
-        self.loss_D_A = self.backward_D_basic(self.netD_A, self.real_B, fake_B)
+        # Try out the 
+        self.loss_D_A = self.backward_D_basic(self.netD_A, self.real_B, fake_B) + 0.005 * self.backward_D_ms_rmse(self.netD_A, self.real_B, fake_B)
+        print("************************************************************")
+        print(f"backward_D_basic loss: {self.backward_D_basic(self.netD_A, self.real_B, fake_B)}")
+        print("************************************************************")
+        print("************************************************************")
+        print(f"backward_D_penalty loss: {self.backward_D_rmse(self.netD_A, self.real_B, fake_B)}")
+        print("************************************************************")
 
     def backward_D_B(self):
         """Calculate GAN loss for discriminator D_B"""
