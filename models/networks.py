@@ -157,18 +157,26 @@ def define_G(input_nc, output_nc, ngf, netG, norm='batch', use_dropout=False, in
         net = UnetGenerator(input_nc, output_nc, 8, ngf, norm_layer=norm_layer, use_dropout=use_dropout)
     else:
         raise NotImplementedError('Generator model name [%s] is not recognized' % netG)
-    #print("0109 check netG value:")
-    #print(netG)
-    #params = net.state_dict()
-    #print("0109 check all keys:")
+    params = net.state_dict()
+    #print("0113 check all keys:")
     #print(params.keys())
     for name, param in net.named_parameters():
-        if param.requires_grad and netG == 'resnet_9blocks' and 'model.18.conv_block' not in name:
-            param.requires_grad = False
-    #print("0109 check all keys require_grad after freezing:")
-    #for name, param in net.named_parameters():
-    #    if param.requires_grad:
-    #        print(name)
+        layer_idx = int(name.split('.')[1])
+        param_type = name.split('.')[2]
+        if param.requires_grad and netG == 'resnet_9blocks' and param_type == 'conv_block':
+        #if param.requires_grad and netG == 'resnet_9blocks' and 'model.18.conv_block' not in name:
+            if layer_idx >= 10 and layer_idx <= 14: # freeze first 4 resnet blocks
+                param.requires_grad = False
+                #print(name)
+            #print('freeze', name, str(param.size()))
+        #else:
+        #    print('unfreeze', name, str(param.size()))
+    # print("0113 check number of freezed params by counting: " + str(count))
+    # pytorch_total_params = sum(p.numel() for p in net.parameters())
+    # print("0113 check number of params: " + str(pytorch_total_params))
+    # pytorch_total_params_trainable = sum(p.numel() for p in net.parameters() if p.requires_grad)
+    # print("0113 check number of trainable params: " + str(pytorch_total_params_trainable))
+    # print("0113 check number of freezed params by subtraction: " + str(pytorch_total_params - pytorch_total_params_trainable))
     return init_net(net, init_type, init_gain, gpu_ids)
 
 
