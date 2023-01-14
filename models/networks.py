@@ -118,7 +118,7 @@ def init_net(net, init_type='normal', init_gain=0.02, gpu_ids=[]):
     return net
 
 
-def define_G(input_nc, output_nc, ngf, netG, norm='batch', use_dropout=False, init_type='normal', init_gain=0.02, gpu_ids=[]):
+def define_G(input_nc, output_nc, ngf, netG, norm='batch', use_dropout=False, init_type='normal', init_gain=0.02, gpu_ids=[], freeze_rate=0.9):
     """Create a generator
 
     Parameters:
@@ -161,7 +161,8 @@ def define_G(input_nc, output_nc, ngf, netG, norm='batch', use_dropout=False, in
     params = net.state_dict()
     #print("0113 check all keys:")
     #print(params.keys())
-    freeze_rate = 0.9
+    #freeze_rate = 0.8 # 0.9 done
+    print("0114 check freeze_rate:" + str(freeze_rate))
     for param in net.parameters():
         if random.random() < freeze_rate:
             param.requires_grad = False

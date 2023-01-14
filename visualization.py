@@ -1,6 +1,6 @@
 from matplotlib import pyplot as plt
-
-experiment_name = 'freeze-finetune'
+import sys
+#experiment_name = 'freeze-rate'
 
 def find_substring_end_index(string, token):
     start_index = string.find(token)
@@ -53,6 +53,7 @@ def plot_multiple_curves(data_list, experiment_name):
 
 if __name__ == '__main__':
     #experiment_name = 'freeze-finetune'
+    experiment_name = sys.argv[1]
     res = read_loss(experiment_name)
     # print(res)
     plot_multiple_curves(res, experiment_name)
