@@ -118,7 +118,7 @@ def init_net(net, init_type='normal', init_gain=0.02, gpu_ids=[]):
     return net
 
 
-def define_G(input_nc, output_nc, ngf, netG, norm='batch', use_dropout=False, init_type='normal', init_gain=0.02, gpu_ids=[], freeze_rate=0.9):
+def define_G(input_nc, output_nc, ngf, netG, norm='batch', use_dropout=False, init_type='normal', init_gain=0.02, gpu_ids=[], freeze_rate=0.9, free_idx=9):
     """Create a generator
 
     Parameters:
@@ -161,19 +161,21 @@ def define_G(input_nc, output_nc, ngf, netG, norm='batch', use_dropout=False, in
     params = net.state_dict()
     #print("0113 check all keys:")
     #print(params.keys())
-    #freeze_rate = 0.8 # 0.9 done
-    print("0114 check freeze_rate:" + str(freeze_rate))
-    for param in net.parameters():
-        if random.random() < freeze_rate:
-            param.requires_grad = False
+    
+    ## working code to freeze params by freeze_rate
+    # print("0114 check freeze_rate:" + str(freeze_rate))
+    # for param in net.parameters():
+    #     if random.random() < freeze_rate:
+    #         param.requires_grad = False
         
     ## working code to freeze params by block
-    # for name, param in net.named_parameters():
-    #     layer_idx = int(name.split('.')[1])
-    #     param_type = name.split('.')[2]
-    #     if param.requires_grad and netG == 'resnet_9blocks' and param_type == 'conv_block':
-    #         if layer_idx >= 10 and layer_idx <= 14: # freeze first 4 resnet blocks
-    #             param.requires_grad = False
+    for name, param in net.named_parameters():
+        layer_idx = int(name.split('.')[1])
+        param_type = name.split('.')[2]
+        if param.requires_grad and netG == 'resnet_9blocks' and param_type == 'conv_block':
+            #if layer_idx >= 10 and layer_idx <= 14: # freeze first 4 resnet blocks
+            if layer_idx != free_idx:
+                param.requires_grad = False
     
     # print test stuff 
                 #print(name)

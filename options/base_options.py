@@ -58,6 +58,8 @@ class BaseOptions():
         parser.add_argument('--wandb_project_name', type=str, default='CycleGAN-and-pix2pix', help='specify wandb project name')
         # freeze-rate addition
         parser.add_argument('--freeze_rate', type=float, default=0.9, help='percent of params to be freezed while finetuning')
+        # freeze all blocks except the ith resnet block
+        parser.add_argument('--free_idx', type=int, default=9, help='which # of resnet block to trainable while finetuning')
         self.initialized = True
         return parser
 
