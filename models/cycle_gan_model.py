@@ -3,6 +3,7 @@ import itertools
 from util.image_pool import ImagePool
 from .base_model import BaseModel
 from . import networks
+import random
 
 
 class CycleGANModel(BaseModel):
@@ -16,6 +17,8 @@ class CycleGANModel(BaseModel):
 
     CycleGAN paper: https://arxiv.org/pdf/1703.10593.pdf
     """
+    #self.freeze_rate = 0.9
+    
     @staticmethod
     def modify_commandline_options(parser, is_train=True):
         """Add new dataset-specific options, and rewrite default values for existing options.
@@ -74,6 +77,9 @@ class CycleGANModel(BaseModel):
                                         not opt.no_dropout, opt.init_type, opt.init_gain, self.gpu_ids, opt.freeze_rate)
         self.netG_B = networks.define_G(opt.output_nc, opt.input_nc, opt.ngf, opt.netG, opt.norm,
                                         not opt.no_dropout, opt.init_type, opt.init_gain, self.gpu_ids, opt.freeze_rate)
+        
+        # store freeze_rate
+        self.freeze_rate = opt.freeze_rate
 
         if self.isTrain:  # define discriminators
             self.netD_A = networks.define_D(opt.output_nc, opt.ndf, opt.netD,
@@ -184,8 +190,22 @@ class CycleGANModel(BaseModel):
         # G_A and G_B
         self.set_requires_grad([self.netD_A, self.netD_B], False)  # Ds require no gradients when optimizing Gs
         self.optimizer_G.zero_grad()  # set G_A and G_B's gradients to zero
+        # self.netG_A
+        # for param in self.netG_A.parameters():
+        #     if random.random() < self.freeze_rate:
+        #         param.requires_grad = False
+        # for param in self.netG_B.parameters():
+        #     if random.random() < self.freeze_rate:
+        #         param.requires_grad = False
         self.backward_G()             # calculate gradients for G_A and G_B
         self.optimizer_G.step()       # update G_A and G_B's weights
+        # # sanity check number of freezed params
+        net = self.netG_A
+        pytorch_total_params = sum(p.numel() for p in net.parameters())
+        print("0117 check number of params: " + str(pytorch_total_params))
+        pytorch_total_params_trainable = sum(p.numel() for p in net.parameters() if p.requires_grad)
+        print("0117 check number of trainable params: " + str(pytorch_total_params_trainable))
+        print("0117 check number of freezed params by subtraction: " + str(pytorch_total_params - pytorch_total_params_trainable))
         # D_A and D_B
         self.set_requires_grad([self.netD_A, self.netD_B], True)
         self.optimizer_D.zero_grad()   # set D_A and D_B's gradients to zero

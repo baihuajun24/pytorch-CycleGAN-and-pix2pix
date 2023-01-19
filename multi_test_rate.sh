@@ -1,5 +1,5 @@
 #!/bin/bash
-for i in $(seq 0.5 0.1 1.0)
+for i in $(seq 0.0 0.1 1.0)
 do
 	e_name="freeze-rate_${i}"
 	echo $e_name
