@@ -4,6 +4,7 @@ from util.image_pool import ImagePool
 from .base_model import BaseModel
 from . import networks
 import random
+import torchmetrics
 
 
 class CycleGANModel(BaseModel):
@@ -143,11 +144,24 @@ class CycleGANModel(BaseModel):
         loss_D = (loss_D_real + loss_D_fake) * 0.5
         loss_D.backward()
         return loss_D
+    
+    def backward_D_ms_ssim(self, netD, real, fake):
+        """Calculate Multi-scale Structural Similarity Index loss for the discriminator"""
+        # Calculate loss
+        ms_ssim = torchmetrics.MultiScaleStructuralSimilarityIndexMeasure().to("cuda")
+        loss_D = ms_ssim(real, fake.detach())
+        return -(loss_D + 1)
 
-    def backward_D_A(self):
+    # def backward_D_A(self):
+    #     """Calculate GAN loss for discriminator D_A"""
+    #     fake_B = self.fake_B_pool.query(self.fake_B)
+    #     self.loss_D_A = self.backward_D_basic(self.netD_A, self.real_B, fake_B)
+    
+    def backward_D_A(self, epoch):
         """Calculate GAN loss for discriminator D_A"""
         fake_B = self.fake_B_pool.query(self.fake_B)
-        self.loss_D_A = self.backward_D_basic(self.netD_A, self.real_B, fake_B)
+        coefficient = 0.001 - (0.001/200) * epoch  # decayed
+        self.loss_D_A = self.backward_D_basic(self.netD_A, self.real_B, fake_B) + coefficient * self.backward_D_ms_ssim(self.netD_A, self.real_B, fake_B)  # MS-SSIM
 
     def backward_D_B(self):
         """Calculate GAN loss for discriminator D_B"""
@@ -183,7 +197,7 @@ class CycleGANModel(BaseModel):
         self.loss_G = self.loss_G_A + self.loss_G_B + self.loss_cycle_A + self.loss_cycle_B + self.loss_idt_A + self.loss_idt_B
         self.loss_G.backward()
 
-    def optimize_parameters(self):
+    def optimize_parameters(self, epoch): # 0125 not sure
         """Calculate losses, gradients, and update network weights; called in every training iteration"""
         # forward
         self.forward()      # compute fake images and reconstruction images.
@@ -209,6 +223,6 @@ class CycleGANModel(BaseModel):
         # D_A and D_B
         self.set_requires_grad([self.netD_A, self.netD_B], True)
         self.optimizer_D.zero_grad()   # set D_A and D_B's gradients to zero
-        self.backward_D_A()      # calculate gradients for D_A
+        self.backward_D_A(epoch)      # calculate gradients for D_A
         self.backward_D_B()      # calculate graidents for D_B
         self.optimizer_D.step()  # update D_A and D_B's weights
