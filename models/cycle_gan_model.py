@@ -160,7 +160,8 @@ class CycleGANModel(BaseModel):
     def backward_D_A(self, epoch):
         """Calculate GAN loss for discriminator D_A"""
         fake_B = self.fake_B_pool.query(self.fake_B)
-        coefficient = 0.001 - (0.001/200) * epoch  # decayed
+        reg_coef = 0.0
+        coefficient = reg_coef - (reg_coef/200) * epoch  # decayed
         self.loss_D_A = self.backward_D_basic(self.netD_A, self.real_B, fake_B) + coefficient * self.backward_D_ms_ssim(self.netD_A, self.real_B, fake_B)  # MS-SSIM
 
     def backward_D_B(self):
@@ -214,12 +215,12 @@ class CycleGANModel(BaseModel):
         self.backward_G()             # calculate gradients for G_A and G_B
         self.optimizer_G.step()       # update G_A and G_B's weights
         # # sanity check number of freezed params
-        net = self.netG_A
-        pytorch_total_params = sum(p.numel() for p in net.parameters())
-        print("0117 check number of params: " + str(pytorch_total_params))
-        pytorch_total_params_trainable = sum(p.numel() for p in net.parameters() if p.requires_grad)
-        print("0117 check number of trainable params: " + str(pytorch_total_params_trainable))
-        print("0117 check number of freezed params by subtraction: " + str(pytorch_total_params - pytorch_total_params_trainable))
+        # net = self.netG_A
+        # pytorch_total_params = sum(p.numel() for p in net.parameters())
+        # print("0117 check number of params: " + str(pytorch_total_params))
+        # pytorch_total_params_trainable = sum(p.numel() for p in net.parameters() if p.requires_grad)
+        # print("0117 check number of trainable params: " + str(pytorch_total_params_trainable))
+        # print("0117 check number of freezed params by subtraction: " + str(pytorch_total_params - pytorch_total_params_trainable))
         # D_A and D_B
         self.set_requires_grad([self.netD_A, self.netD_B], True)
         self.optimizer_D.zero_grad()   # set D_A and D_B's gradients to zero
